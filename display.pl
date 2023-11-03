@@ -1,91 +1,72 @@
-% Define the initial board
+% Define o tabuleiro inicial
+% Defina o tabuleiro inicial com listas vazias.
 initialBoard([
-    [empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty]
+    [[], [], [], [black, white, black], []],
+    [[], [], [], [], []],
+    [[], [], [], [], []],
+    [[], [black], [], [], []],
+    [[], [], [], [], []]
 ]).
 
-% Define the symbols for each piece
-symbol(empty, S) :- S = ' '.
-symbol(black, S) :- S = 'X'.
-symbol(white, S) :- S = 'O'.
 
-% Define the letters for each row
-letter(1, L) :- L = '1'.
-letter(2, L) :- L = '2'.
-letter(3, L) :- L = '3'.
-letter(4, L) :- L = '4'.
-letter(5, L) :- L = '5'.
+% Define as letras para cada linha
+letter(1, '1').
+letter(2, '2').
+letter(3, '3').
+letter(4, '4').
+letter(5, '5').
 
-% Print the board
+% Imprime o tabuleiro
 printBoard(X) :-
     nl,
-    write('   | 1 | 2 | 3 | 4 | 5 |\n'),
-    write('---|---|---|---|---|---|\n'),
+    write('   |    1    |    2    |    3    |    4    |    5    |\n'),
+    write('---|---------|---------|---------|---------|---------|\n'),
     printMatrix(X, 1).
 
-% Update the printLine predicate to handle the new piece types
+% Atualiza a regra printLine para lidar com os novos tipos de peças
 printLine([]).
 printLine([Head|Tail]) :-
-    symbol(Head, S),
-    write(S),
-    write(' | '),
+    piece(Head), % Usa a regra piece/1 para obter a representação da peça
     printLine(Tail).
 
-
-% Print the matrix
+% Imprime a matriz
 printMatrix([], 6).
 printMatrix([Head|Tail], N) :-
     letter(N, L),
+    N1 is N + 1,
+    write('   |         |         |         |         |         |\n'),
     write(' '),
     write(L),
-    N1 is N + 1,
-    write(' | '),
+    write(' |'),
     printLine(Head),
-    write('\n---|---|---|---|---|---|\n'),
+    write('\n---|---------|---------|---------|---------|---------|\n'),
     printMatrix(Tail, N1).
 
-% Print a line
+% Imprime uma linha
 printLine([]).
 printLine([Head|Tail]) :-
-    symbol(Head, S),
-    write(S),
-    write(' | '),
+    piece(Head), % Usa a regra piece/1 para obter a representação da peça
     printLine(Tail).
 
 
-piece(empty).
-piece(peao(black)).
-piece(peao(white)).
-piece(torre(black)).
-piece(torre(white)).
-piece(cavalo(black)).
-piece(cavalo(white)).
-piece(bispo(black)).
-piece(bispo(white)).
-piece(rainha(black)).
-piece(rainha(white)).
-
-
 % Print a piece
-piece([black]) :- write('X').
-piece([white]) :- write('O').
+piece([]) :- write('          ').
+piece([black]) :- write('    X    ').
+piece([white]) :- write('    O    ').
 
 % Print a combination of two pieces
-piece([black, black]) :- write('XX').
-piece([white, white]) :- write('OO').
-piece([black, white]) :- write('XO').
-piece([white, black]) :- write('OX').
+piece([black, black]) :- write('   XX   ').
+piece([white, white]) :- write('   OO   ').
+piece([black, white]) :- write('   XO   ').
+piece([white, black]) :- write('   OX   ').
 
 % Print a combination of three pieces
-piece([black, black, black]) :- write('XXX').
-piece([white, white, white]) :- write('OOO').
-piece([black, black, white]) :- write('XXO').
-piece([black, white, black]) :- write('XOX').
-piece([white, black, black]) :- write('OXX').
-piece([white, white, black]) :- write('OOX').
+piece([black, black, black]) :- write('  XXX  ').
+piece([white, white, white]) :- write('  OOO  ').
+piece([black, black, white]) :- write('  XXO  ').
+piece([black, white, black]) :- write('  XOX  ').
+piece([white, black, black]) :- write('  OXX  ').
+piece([white, white, black]) :- write('  OOX  ').
 piece([black, white, white]) :- write('XOO').
 piece([white, black, white]) :- write('OXO').
 

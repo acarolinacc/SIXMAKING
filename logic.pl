@@ -46,7 +46,6 @@ gameLoop(Board, Player1, Player2) :-
             )
     ),
     (
-        (checkGameState('black', NewBoard), write('\nThanks for playing!\n'));  % Verifica o estado do jogo para o jogador preto.
         (
             Player2 == 'P' -> 
                 (
@@ -62,7 +61,6 @@ gameLoop(Board, Player1, Player2) :-
                 )
         ),
         (
-            (checkGameState('white', FinalBoard), write('\nThanks for playing!\n'));  % Verifica o estado do jogo para o jogador branco.
             gameLoop(FinalBoard, Player1, Player2)  % Continua o jogo.
         )
     ).
@@ -89,7 +87,7 @@ isEmptyCell(Board, Row, Column, Res) :-
 checkMove(Board, Player, NewBoard, Expected, ColumnIndex, RowIndex) :-
     (
         % Verifica se o jogador tenta mover um trabalhador vazio para uma célula com uma peça esperada (black ou white).
-        (Player == empty, member(Expected, [black, white]),
+        (Player = [empty], member(Expected, [[black], [white]]),
             (
                 getValueFromMatrix(Board, RowIndex, ColumnIndex, Expected),
                 replaceInMatrix(Board, RowIndex, ColumnIndex, Player, NewBoard)
@@ -101,11 +99,11 @@ checkMove(Board, Player, NewBoard, Expected, ColumnIndex, RowIndex) :-
         ;
 
         % Verifica se o jogador tenta mover uma peça (black ou white) para qualquer célula.
-        ((Player == black; Player == white),
+        ((Player = [black]; Player = [white]),
             (
                 % Verifica se a célula de destino (determinada por RowIndex e ColumnIndex) está vazia (empty) ou contém uma peça do jogador ou é de outra cor.
                 (getValueFromMatrix(Board, RowIndex, ColumnIndex, DestinationValue),
-                (DestinationValue == empty ; DestinationValue == Player ; DestinationValue \== Player),
+                (DestinationValue = [empty] ; DestinationValue = Player ; DestinationValue \= Player),
                 replaceInMatrix(Board, RowIndex, ColumnIndex, Player, NewBoard)
                 ;
                 write('INVALID MOVE: This move is not allowed, please try again!\n\n'),
@@ -121,6 +119,8 @@ checkMove(Board, Player, NewBoard, Expected, ColumnIndex, RowIndex) :-
             askCoords(Board, Player, NewBoard, Expected)
         )
     ).
+
+
 
 % Pede as coordenadas de uma jogada.
 askCoords(Board, Player, NewBoard, Expected) :-
@@ -141,19 +141,19 @@ moveWorker(Board, 1, NewBoard, PlayerColor) :-
 
 % Em seguida, você pode usar moveWorkerBlack e moveWorkerWhite como segue:
 
-moveWorkerBlack(Board, 1, NewBoard) :- moveWorker(Board, 1, NewBoard, black).
-moveWorkerWhite(Board, 1, NewBoard) :- moveWorker(Board, 1, NewBoard, white).
+moveWorkerBlack(Board, 1, NewBoard) :- moveWorker(Board, 1, NewBoard, [black]).
+moveWorkerWhite(Board, 1, NewBoard) :- moveWorker(Board, 1, NewBoard, [white]).
 
 % Adiciona trabalhadores ao tabuleiro.
 addWorkers(InitialBoard, WorkersBoard, 'P', 'P') :-
       printBoard(InitialBoard),  % Imprime o tabuleiro inicial.
       write('\n------------------ PLAYER X -------------------\n\n'),
       write('1. Choose pawn cell.\n'),
-      askCoords(InitialBoard, black, Worker1Board, empty),
+      askCoords(InitialBoard, [black], Worker1Board, empty),
       printBoard(Worker1Board),  % Imprime o tabuleiro após o jogador X escolher uma célula.
       write('\n------------------ PLAYER O -------------------\n\n'),
       write('1. Choose pawn cell.\n'),
-      askCoords(Worker1Board, white, WorkersBoard, empty),
+      askCoords(Worker1Board, [white], WorkersBoard, empty),
       printBoard(WorkersBoard).  % Imprime o tabuleiro após o jogador O escolher uma célula.
 
 % Funções para a vez do jogador preto e branco.
@@ -173,7 +173,7 @@ whitePlayerTurn(Board, NewBoard, 'C') :-
 % Predicado para adicionar uma nova peça (Place a new disk)
 addNewDisk(Board, NewBoard, PlayerColor) :-
     write('Choose a cell to add a new piece.\n'),
-    askCoords(Board, PlayerColor, NewBoard, empty).
+    askCoords(Board, [PlayerColor], NewBoard, empty).
 
 % Predicado para mover uma torre (Move a tower)
 moveTower(Board, NewBoard, PlayerColor) :-
@@ -186,6 +186,7 @@ moveTower(Board, NewBoard, PlayerColor) :-
             write('You chose not to move a tower.\n'),
             NewBoard = Board  % Se o jogador optar por não mover uma torre, o tabuleiro permanece inalterado.
     ).
+
 
 % Função principal para o turno do jogador
 playerTurn(Board, NewBoard, PlayerColor, PlayerName) :-
@@ -205,10 +206,8 @@ playerTurn(Board, NewBoard, PlayerColor, PlayerName) :-
 gameLoop(Board, Player1, Player2) :-
       blackPlayerTurn(Board, NewBoard, Player1),
       (
-            (checkGameState('black', NewBoard), write('\nThanks for playing!\n'));  % Verifica o estado do jogo para o jogador preto.
             (whitePlayerTurn(NewBoard, FinalBoard, Player2),
                   (
-                        (checkGameState('white', FinalBoard), write('\nThanks for playing!\n'));  % Verifica o estado do jogo para o jogador branco.
                         (gameLoop(FinalBoard, Player1, Player2))  % Continua o loop do jogo.
                   )
             )
