@@ -21,67 +21,11 @@ getCurrentBoard(CurrentBoard) :-
 
 % Verifica o estado atual do jogo após cada jogada.
 checkGameState(Player, Board) :-
-    (
-        checkFullBoard(Board) -> drawMessage  % Verifica se o tabuleiro está cheio.
-        ;
-        checkValidSpots(Board, 0, 0, Result), Result =:= 0 -> drawMessage  % Verifica se há jogadas válidas.
-    ).
+    (checkFullBoard(Board) -> drawMessage  % Verifica se o tabuleiro está cheio.).
 
 drawMessage :-
     write('Woops, no more space left! It is a draw!').  % Mensagem de empate.
 
-% Loop do jogo, em que recebe a jogada de cada jogador e verifica o estado do jogo a seguir.
-gameLoop(Board, Player1, Player2) :-
-    getCurrentBoard(CurrentBoard),  % Obtém o tabuleiro atual.
-    (
-        Player1 == 'P' -> 
-            (
-                blackPlayerTurn(CurrentBoard, NewBoard, Player1),
-                updateBoard(NewBoard)
-            );
-        Player1 == 'C' -> 
-            (
-                blackPlayerTurn(CurrentBoard, NewBoard, Player1),
-                updateBoard(NewBoard)
-            )
-    ),
-    (
-        (
-            Player2 == 'P' -> 
-                (
-                    % Use o tabuleiro atual e a vez do jogador branco.
-                    whitePlayerTurn(NewBoard, FinalBoard, Player2),
-                    updateBoard(FinalBoard)
-                );
-            Player2 == 'C' -> 
-                (
-                    % Use o tabuleiro atual e a vez do jogador branco (computador).
-                    whitePlayerTurn(NewBoard, FinalBoard, Player2),
-                    updateBoard(FinalBoard)
-                )
-        ),
-        (
-            gameLoop(FinalBoard, Player1, Player2)  % Continua o jogo.
-        )
-    ).
-
-% Verifica se existem jogadas válidas em todas as células do tabuleiro.
-checkValidSpots(Board, Row, Column, Result) :-
-      (
-            (Column =:= 11, Row1 is Row + 1, checkValidSpots(Board, Row1, 0, Result));
-            (Row =:= 11, Result is 0);
-            ((isValidPosLines(Board, Row, Column, Res)), 
-                  ((Res =:= 0, Column1 is Column + 1, checkValidSpots(Board, Row, Column1, Result));
-                  (Res =:=1 , Result is 1)))
-      ), !.
-
-% Verifica se uma célula está vazia.
-isValidPosLines(Board, Row, Column, Res) :-
-    isEmptyCell(Board, Row, Column, Res).
-
-isEmptyCell(Board, Row, Column, Res) :-
-    ((getValueFromMatrix(Board, Row, Column, Value), Value == empty, !, Res is 1);
-    Res is 0).
 
 % Verifica a validade de uma jogada.
 checkMove(Board, Player, NewBoard, Expected, ColumnIndex, RowIndex) :-
@@ -103,7 +47,7 @@ checkMove(Board, Player, NewBoard, Expected, ColumnIndex, RowIndex) :-
             (
                 % Verifica se a célula de destino (determinada por RowIndex e ColumnIndex) está vazia (empty) ou contém uma peça do jogador ou é de outra cor.
                 (getValueFromMatrix(Board, RowIndex, ColumnIndex, DestinationValue),
-                (DestinationValue = [empty] ; DestinationValue = Player ; DestinationValue \= Player),
+                (DestinationValue = []),
                 replaceInMatrix(Board, RowIndex, ColumnIndex, Player, NewBoard)
                 ;
                 write('INVALID MOVE: This move is not allowed, please try again!\n\n'),
@@ -131,18 +75,6 @@ askCoords(Board, Player, NewBoard, Expected) :-
     RowIndex is NewRow - 1,  % Converte o número da linha para o índice da matriz.
     checkMove(Board, Player, NewBoard, Expected, ColumnIndex, RowIndex).
 
-% Função para mover um trabalhador.
-moveWorker(Board, 1, NewBoard, PlayerColor) :-
-    write('\n2. Choose tower current cell.\n'),
-    askCoords(Board, empty, NoWorkerBoard, PlayerColor),
-    write('3. Choose tower new cell.\n'),
-    askCoords(NoWorkerBoard, PlayerColor, NewBoard, empty),
-    printBoard(NewBoard).
-
-% Em seguida, você pode usar moveWorkerBlack e moveWorkerWhite como segue:
-
-moveWorkerBlack(Board, 1, NewBoard) :- moveWorker(Board, 1, NewBoard, [black]).
-moveWorkerWhite(Board, 1, NewBoard) :- moveWorker(Board, 1, NewBoard, [white]).
 
 % Adiciona trabalhadores ao tabuleiro.
 addWorkers(InitialBoard, WorkersBoard, 'P', 'P') :-
@@ -175,19 +107,94 @@ addNewDisk(Board, NewBoard, PlayerColor) :-
     write('Choose a cell to add a new piece.\n'),
     askCoords(Board, [PlayerColor], NewBoard, empty).
 
-% Predicado para mover uma torre (Move a tower)
+% Função para mover uma torre
 moveTower(Board, NewBoard, PlayerColor) :-
-    write('Do you want to move a tower? [0(No)/1(Yes)]'),
-    manageMoveWorkerBool(MoveWorkerBool),
+    write('Choose any tower to move.\n'),
+    selectTower(Board, [PlayerColor], SelectedTower),  % Escolha de uma torre
+    write('Choose the destination cell for the tower (must not be empty and must be of your color).\n'),
+    askDestination(Board, [PlayerColor], SelectedTower, NewBoard).
+
+% Selecione uma torre válida (não vazia e da cor certa) para mover
+selectTower(Board, Player, SelectedTower) :-
+    manageRow(Row),       % Obtenha a linha escolhida pelo jogador
+    manageColumn(Column),  % Obtenha a coluna escolhida pelo jogador
+    get_piece(Board, Row, Column, Piece),
     (
-        MoveWorkerBool =:= 1 ->
-            moveWorker(Board, 1, NewBoard, PlayerColor)  % Implemente a lógica de mover uma torre aqui
+        is_valid_tower(Piece),  % Verifique se a torre não está vazia
+        hasCorrectColor(Piece, Player) -> SelectedTower = Piece  % Verifique se a torre tem a cor certa
         ;
-            write('You chose not to move a tower.\n'),
-            NewBoard = Board  % Se o jogador optar por não mover uma torre, o tabuleiro permanece inalterado.
+        write('INVALID MOVE: The selected tower is empty or not of your color, please try again!\n\n'),
+        selectTower(Board, Player, SelectedTower)
+    ).
+
+% Solicita a escolha de uma célula de destino que não esteja vazia e da cor certa
+askDestination(Board, Player, SelectedTower, NewBoard) :-
+    manageRow(Row),       % Obtenha a linha escolhida pelo jogador
+    manageColumn(Column),  % Obtenha a coluna escolhida pelo jogador
+    get_piece(Board, Row, Column, Piece),
+    (
+        is_not_empty(Piece),  % Verifique se a célula de destino não está vazia
+        hasCorrectColor(Piece, Player) ->  % Verifique se a célula de destino tem a cor certa
+            (
+                is_valid_tower(Piece) ->  % Verifique se a célula de destino contém uma torre
+                    write('INVALID MOVE: The destination cell must not be empty, please try again!\n\n'),
+                    askDestination(Board, Player, SelectedTower, NewBoard)
+                ;
+                remove_piece(Board, Row, Column, TempBoard),
+                add_piece(TempBoard, Row, Column, SelectedTower, NewBoard),
+                printBoard(NewBoard)  % Imprima o tabuleiro após a jogada
+            )
+        ;
+        write('INVALID MOVE: The destination cell is empty or not of your color, please try again!\n\n'),
+        askDestination(Board, Player, SelectedTower, NewBoard)
     ).
 
 
+% Verifica se uma peça tem a cor correta
+hasCorrectColor(Piece, Player) :-
+    Piece = [Player|_].
+
+% Obtém o elemento em uma posição específica da lista
+nth1(1, [X|_], X).
+nth1(N, [_|T], X) :-
+    N > 1,
+    N1 is N - 1,
+    nth1(N1, T, X).
+
+
+% Obtém a peça em uma posição específica do tabuleiro
+get_piece(Board, Row, Col, Piece) :-
+    nth1(Row, Board, RowList),  % Obtém a linha (lista) correspondente à linha 'Row'
+    nth1(Col, RowList, Piece).  % Obtém a coluna (elemento) correspondente à coluna 'Col'
+
+% Remove uma peça de uma posição específica do tabuleiro
+remove_piece(Board, Row, Col, NewBoard) :-
+    nth1(Row, Board, RowList),     % Obtém a linha (lista) correspondente à linha 'Row'
+    select(_, RowList, NewRowList), % Remove um elemento da linha
+    replace(Board, Row, NewRowList, NewBoard).  % Atualiza a linha no novo tabuleiro
+
+% Adiciona uma peça a uma posição específica do tabuleiro
+add_piece(Board, Row, Col, Piece, NewBoard) :-
+    nth1(Row, Board, RowList),        % Obtém a linha (lista) correspondente à linha 'Row'
+    nth1(Col, RowList, CurrentPiece),  % Obtém a peça atual na posição
+    append([Piece], CurrentPiece, NewPiece),  % Adiciona a nova peça à pilha da posição
+    select(CurrentPiece, RowList, UpdatedRowList),  % Remove a peça antiga da linha
+    nth1(Row, NewBoard, UpdatedRowList, NewRowList),  % Atualiza a linha no novo tabuleiro
+    replace(Board, Row, NewRowList, NewBoard).  % Atualiza o tabuleiro com a nova linha
+
+% Verifica se uma torre é válida (não vazia)
+is_valid_tower(Tower) :- Tower \= [].
+
+% Verifica se uma posição não está vazia
+is_not_empty(Piece) :- Piece \= [].
+
+% Substitui o elemento 'Old' por 'New' na lista 'List' e retorna 'NewList'
+replace(List, Old, New, NewList) :-
+    select(Old, List, TempList),
+    append([New], TempList, NewList).
+
+
+    
 % Função principal para o turno do jogador
 playerTurn(Board, NewBoard, PlayerColor, PlayerName) :-
     write('\n------------------ '), write(PlayerName), write(' -------------------\n\n'),
@@ -195,7 +202,7 @@ playerTurn(Board, NewBoard, PlayerColor, PlayerName) :-
     manageMoveWorkerBool(MoveWorkerBool),  % Obtém a escolha do jogador (mover torre ou adicionar peça).
     (
         MoveWorkerBool =:= 1 ->
-            moveTower(Board, NewBoard, PlayerColor)  % O jogador escolhe mover uma torre.
+            moveTower(Board, NewBoard, PlayerColor)   % O jogador escolhe mover uma torre.
         ;
             addNewDisk(Board, NewBoard, PlayerColor)  % O jogador escolhe adicionar uma nova peça.
     ),
@@ -214,18 +221,6 @@ gameLoop(Board, Player1, Player2) :-
       ).
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 % Função para iniciar o jogo.
 startGame(Player1, Player2) :-
       initialBoard(InitialBoard),  % Obtém um tabuleiro inicial.
@@ -233,214 +228,95 @@ startGame(Player1, Player2) :-
       gameLoop(WorkersBoard, Player1, Player2).  % Inicia o loop do jogo.
 
 
-isValidMovePeao(State, X1, Y1, X2, Y2) :-
-    getCurrentPlayer(State, Player),
-    getState(State, Board, _),
-    nth1(Y1, Board, Row1),
-    nth1(Y2, Board, Row2),
-    nth1(X1, Row1, Player),  % Verifica se há uma peça do jogador na posição inicial
-    (
-        (X1 =:= X2, Y2 is Y1 + 1, isClearPath(X1, Y1, X2, Y2, Board)) ;  % Movimento para cima
-        (X1 =:= X2, Y2 is Y1 - 1, isClearPath(X1, Y2, X1, Y1, Board))  % Movimento para baixo
-    ).
-
-% Regra para promover um peão a uma torre
-promoteToTorre(State, X, Y, NewState) :-
-    getCurrentPlayer(State, Player),
-    getState(State, Board, _),
-    nth1(Y, Board, Row),
-    nth1(X, Row, Player),  % Verifica se há uma peça do jogador na posição
-    length(Row, NumPieces),  % Verifique quantas peças estão empilhadas
-    NumPieces = 1,  % Se houver exatamente 1 peça na posição, promova o peão
-    promotePiece(Row, NewRow),  % Promova o peão a uma torre
-    replace(Board, Y, NewRow, NewBoard),  % Atualize o tabuleiro
-    setState(State, NewBoard, Player, NewState).
-
-% Promove um peão empilhado a uma torre
-promotePiece([Player], [torre(Player)]).
-
-% Regras de movimento para a torre (2 discos)
-isValidMoveTower(State, X1, Y1, X2, Y2) :-
-    getCurrentPlayer(State, Player),
-    getState(State, Board, _),
-    nth1(Y1, Board, Row1),
-    nth1(Y2, Board, Row2),
-    nth1(X1, Row1, Player),  % Verifica se há uma peça do jogador na posição inicial
-    (
-        (X1 =:= X2, Y1 =\= Y2 ; X1 =\= X2, Y1 =:= Y2),  % Movimento ortogonal
-        isClearPath(X1, Y1, X2, Y2, Board)  % Verifica se o caminho está livre de peças
-    ).
-
-% Verifica se o caminho entre (X1, Y1) e (X2, Y2) está livre de peças
-isClearPath(X, Y, X, Y, _).
-isClearPath(X1, Y1, X2, Y2, Board) :-
-    X1 =:= X2,  % Movimento na mesma coluna
-    Y1 < Y2,  % Movimento para baixo
-    Y is Y1 + 1,
-    nth1(Y, Board, Row),
-    nth1(X1, Row, empty),
-    isClearPath(X1, Y, X2, Y2, Board).
-isClearPath(X1, Y1, X2, Y2, Board) :-
-    X1 =:= X2,  % Movimento na mesma coluna
-    Y1 > Y2,  % Movimento para cima
-    Y is Y1 - 1,
-    nth1(Y, Board, Row),
-    nth1(X1, Row, empty),
-    isClearPath(X1, Y, X2, Y2, Board).
-isClearPath(X1, Y1, X2, Y2, Board) :-
-    Y1 =:= Y2,  % Movimento na mesma linha
-    X1 < X2,  % Movimento para a direita
-    X is X1 + 1,
-    nth1(Y1, Board, Row),
-    nth1(X, Row, empty),
-    isClearPath(X, Y1, X2, Y2, Board).
-isClearPath(X1, Y1, X2, Y2, Board) :-
-    Y1 =:= Y2,  % Movimento na mesma linha
-    X1 > X2,  % Movimento para a esquerda
-    X is X1 - 1,
-    nth1(Y1, Board, Row),
-    nth1(X, Row, empty),
-    isClearPath(X, Y1, X2, Y2, Board).
 
 
-% Regras de movimento para o cavalo (3 discos)
-isValidMoveCavalo(State, X1, Y1, X2, Y2) :-
-    getCurrentPlayer(State, Player),
-    getState(State, Board, _),
-    nth1(Y1, Board, Row1),
-    nth1(Y2, Board, Row2),
-    nth1(X1, Row1, Player),  % Verifica se há uma peça do jogador na posição inicial
-    (
-        (abs(X2 - X1) =:= 1, abs(Y2 - Y1) =:= 2) ;  % Movimento em forma de L
-        (abs(X2 - X1) =:= 2, abs(Y2 - Y1) =:= 1)
-    ),
-    nth1(X2, Row2, empty).  % Verifica se a célula de destino está vazia
 
 
-% Regras de movimento para o bispo (4 discos)
-isValidMoveBispo(State, X1, Y1, X2, Y2) :-
-    getCurrentPlayer(State, Player),
-    getState(State, Board, _),
-    nth1(Y1, Board, Row1),
-    nth1(Y2, Board, Row2),
-    nth1(X1, Row1, Player),  % Verifica se há uma peça do jogador na posição inicial
-    abs(X2 - X1) =:= abs(Y2 - Y1),  % Movimento diagonal
-    isClearDiagonalPath(X1, Y1, X2, Y2, Board).  % Verifica se o caminho diagonal está livre de peças
-
-% Verifica se o caminho diagonal entre (X1, Y1) e (X2, Y2) está livre de peças
-isClearDiagonalPath(X, Y, X, Y, _).
-isClearDiagonalPath(X1, Y1, X2, Y2, Board) :-
-    X1 < X2, Y1 < Y2,  % Movimento para a diagonal inferior direita
-    X is X1 + 1, Y is Y1 + 1,
-    nth1(Y, Board, Row),
-    nth1(X, Row, empty),
-    isClearDiagonalPath(X, Y, X2, Y2, Board).
-isClearDiagonalPath(X1, Y1, X2, Y2, Board) :-
-    X1 < X2, Y1 > Y2,  % Movimento para a diagonal superior direita
-    X is X1 + 1, Y is Y1 - 1,
-    nth1(Y, Board, Row),
-    nth1(X, Row, empty),
-    isClearDiagonalPath(X, Y, X2, Y2, Board).
-isClearDiagonalPath(X1, Y1, X2, Y2, Board) :-
-    X1 > X2, Y1 < Y2,  % Movimento para a diagonal inferior esquerda
-    X is X1 - 1, Y is Y1 + 1,
-    nth1(Y, Board, Row),
-    nth1(X, Row, empty),
-    isClearDiagonalPath(X, Y, X2, Y2, Board).
-isClearDiagonalPath(X1, Y1, X2, Y2, Board) :-
-    X1 > X2, Y1 > Y2,  % Movimento para a diagonal superior esquerda
-    X is X1 - 1, Y is Y1 - 1,
-    nth1(Y, Board, Row),
-    nth1(X, Row, empty),
-    isClearDiagonalPath(X, Y, X2, Y2, Board).
-
-% Regras de movimento para a rainha (5 discos)
-isValidMoveRainha(State, X1, Y1, X2, Y2) :-
-    isValidMoveTower(State, X1, Y1, X2, Y2) ;  % Pode mover como uma torre
-    isValidMoveCavalo(State, X1, Y1, X2, Y2) ;  % Pode mover como um cavalo
-    isValidMoveBispo(State, X1, Y1, X2, Y2).  % Pode mover como um bispo
 
 
-% Empilhar uma peça no tabuleiro
-stackPieces(State, X, Y, NewState) :-
-    getCurrentPlayer(State, Player),
-    getState(State, Board, _),
-    nth1(Y, Board, Row),
-    nth1(X, Row, Stack),
-    append([Player], Stack, NewStack),  % Empilhe a peça atual em cima das peças existentes
-    replace(Row, X, NewStack, NewRow),  % Atualize a linha no tabuleiro
-    replace(Board, Y, NewRow, NewBoard),  % Atualize o tabuleiro
-    setState(State, NewBoard, Player, NewState).
-
-% Substitua o elemento na posição I de uma lista por um novo elemento
-replace([_|T], 1, X, [X|T]).
-replace([H|T], I, X, [H|R]) :-
-    I > 1,
-    I1 is I - 1,
-    replace(T, I1, X, R).
 
 
-% Regra para promover um peão a uma torre
-promoteToTorre(State, X, Y, NewState) :-
-    getCurrentPlayer(State, Player),
-    getState(State, Board, _),
-    nth1(Y, Board, Row),
-    nth1(X, Row, Stack),
-    length(Stack, NumPieces),  % Verifique quantas peças estão empilhadas
-    NumPieces = 2,  % Se houver pelo menos 2 peças empilhadas
-    promotePiece(Stack, NewStack),  % Promova o peão a uma torre
-    replace(Row, X, NewStack, NewRow),  % Atualize a linha no tabuleiro
-    replace(Board, Y, NewRow, NewBoard),  % Atualize o tabuleiro
-    setState(State, NewBoard, Player, NewState).
-
-% Promova um peão empilhado a uma torre
-promotePiece([peao(Player) | Rest], [torre(Player) | Rest]).
-
-% Regra para transformar uma torre em um cavalo
-transformToCavalo(State, X, Y, NewState) :-
-    getCurrentPlayer(State, Player),
-    getState(State, Board, _),
-    nth1(Y, Board, Row),
-    nth1(X, Row, Stack),
-    length(Stack, NumPieces),  % Verifique quantas peças estão empilhadas
-    NumPieces = 3,  % Se houver pelo menos 3 peças empilhadas
-    transformPiece(Stack, NewStack, cavalo(Player)),  % Transforme a torre em um cavalo
-    replace(Row, X, NewStack, NewRow),  % Atualize a linha no tabuleiro
-    replace(Board, Y, NewRow, NewBoard),  % Atualize o tabuleiro
-    setState(State, NewBoard, Player, NewState).
-
-% Transforma uma torre empilhada em um cavalo
-transformPiece([torre(Player) | Rest], [cavalo(Player) | Rest], cavalo(Player)).
-
-% Regra para transformar um cavalo em um bispo
-transformToBispo(State, X, Y, NewState) :-
-    getCurrentPlayer(State, Player),
-    getState(State, Board, _),
-    nth1(Y, Board, Row),
-    nth1(X, Row, Stack),
-    length(Stack, NumPieces),  % Verifique quantas peças estão empilhadas
-    NumPieces = 4,  % Se houver pelo menos 4 peças empilhadas
-    transformPiece(Stack, NewStack, bispo(Player)),  % Transforme o cavalo em um bispo
-    replace(Row, X, NewStack, NewRow),  % Atualize a linha no tabuleiro
-    replace(Board, Y, NewRow, NewBoard),  % Atualize o tabuleiro
-    setState(State, NewBoard, Player, NewState).
-
-% Transforma um cavalo empilhado em um bispo
-transformPiece([cavalo(Player) | Rest], [bispo(Player) | Rest], bispo(Player)).
+% Definição da função nth0/3
+nth0(0, [X|_], X).
+nth0(N, [_|Resto], Elemento) :-
+    N > 0,
+    N1 is N - 1,
+    nth0(N1, Resto, Elemento).
 
 
-% Regra para promover uma torre a uma rainha
-promoteToRainha(State, X, Y, NewState) :-
-    getCurrentPlayer(State, Player),
-    getState(State, Board, _),
-    nth1(Y, Board, Row),
-    nth1(X, Row, Stack),
-    length(Stack, NumPieces),  % Verifique quantas peças estão empilhadas
-    NumPieces = 5,  % Se houver pelo menos 5 peças empilhadas
-    promotePiece(Stack, NewStack),  % Promova a torre a uma rainha
-    replace(Row, X, NewStack, NewRow),  % Atualize a linha no tabuleiro
-    replace(Board, Y, NewRow, NewBoard),  % Atualize o tabuleiro
-    setState(State, NewBoard, Player, NewState).
+% Defina as regras de movimento para o Peão
+move(peao, X1/Y1, X2/Y2, Tabuleiro) :-
+    % Certifique-se de que as coordenadas X1/Y1 estão ocupadas por uma torre.
+    nth0(Y1, Tabuleiro, Linha),
+    nth0(X1, Linha, torre),
+    % Verifique se X2/Y2 está em uma das quatro direções adjacentes.
+    (X2 is X1 + 1, Y2 = Y1; X2 is X1 - 1, Y2 = Y1; X2 = X1, Y2 is Y1 + 1; X2 = X1, Y2 is Y1 - 1),
+    % Certifique-se de que X2/Y2 está dentro dos limites do tabuleiro.
+    dentro_dos_limites(X2, Y2, Tabuleiro).
 
-% Promova uma torre empilhada a uma rainha
-promotePiece([torre(Player) | Rest], [rainha(Player) | Rest]).
+% Defina as regras de movimento para a Torre
+move(torre, X1/Y1, X2/Y2, Tabuleiro) :-
+    % Certifique-se de que as coordenadas X1/Y1 estão ocupadas por uma torre.
+    nth0(Y1, Tabuleiro, Linha),
+    nth0(X1, Linha, torre),
+    % Certifique-se de que X2/Y2 está em uma direção ortogonal (horizontal ou vertical).
+    (X1 = X2; Y1 = Y2),
+    % Verifique se não há torres no caminho entre X1/Y1 e X2/Y2.
+    sem_torres_no_caminho(X1, Y1, X2, Y2, Tabuleiro).
+
+% Verifique se X/Y está dentro dos limites do tabuleiro.
+dentro_dos_limites(X, Y, Tabuleiro) :-
+    length(Tabuleiro, Tam),
+    X >= 0, Y >= 0, X < Tam, Y < Tam.
+
+% Verifique se não há torres no caminho entre X1/Y1 e X2/Y2.
+sem_torres_no_caminho(X, Y, X, Y, _).
+sem_torres_no_caminho(X1, Y1, X2, Y2, Tabuleiro) :-
+    (X1 = X2, Y1 < Y2, Y is Y1 + 1; X1 = X2, Y1 > Y2, Y is Y1 - 1),
+    nth0(Y, Tabuleiro, Linha),
+    nth0(X1, Linha, vazio),
+    sem_torres_no_caminho(X1, Y, X2, Y2, Tabuleiro).
+
+% Defina as regras de movimento para o Cavalo
+move(cavalo, X1/Y1, X2/Y2, Tabuleiro) :-
+    % Certifique-se de que as coordenadas X1/Y1 estão ocupadas por uma torre.
+    nth0(Y1, Tabuleiro, Linha),
+    nth0(X1, Linha, torre),
+    % Verifique as possíveis posições de destino para um movimento em forma de "L".
+    PossiveisDestinos = [X1-2/Y1-1, X1-2/Y1+1, X1-1/Y1-2, X1-1/Y1+2, X1+1/Y1-2, X1+1/Y1+2, X1+2/Y1-1, X1+2/Y1+1],
+    member(X2/Y2, PossiveisDestinos),
+    % Certifique-se de que X2/Y2 está dentro dos limites do tabuleiro.
+    dentro_dos_limites(X2, Y2, Tabuleiro).
+
+% Defina as regras de movimento para o Bispo
+move(bispo, X1/Y1, X2/Y2, Tabuleiro) :-
+    % Certifique-se de que as coordenadas X1/Y1 estão ocupadas por uma torre.
+    nth0(Y1, Tabuleiro, Linha),
+    nth0(X1, Linha, torre),
+    % Verifique se o movimento é diagonal (delta X é igual ao delta Y).
+    DX is abs(X2 - X1),
+    DY is abs(Y2 - Y1),
+    DX = DY,
+    % Verifique se não há torres no caminho entre X1/Y1 e X2/Y2 na diagonal.
+    sem_torres_na_diagonal(X1, Y1, X2, Y2, Tabuleiro).
+
+% Defina as regras de movimento para a Rainha
+move(rainha, X1/Y1, X2/Y2, Tabuleiro) :-
+    % Certifique-se de que as coordenadas X1/Y1 estão ocupadas por uma torre.
+    nth0(Y1, Tabuleiro, Linha),
+    nth0(X1, Linha, torre),
+    % Verifique se o movimento é ortogonal ou diagonal.
+    (X1 = X2; Y1 = Y2; abs(X2 - X1) = abs(Y2 - Y1)),
+    % Verifique se não há torres no caminho entre X1/Y1 e X2/Y2 na direção escolhida.
+    sem_torres_no_caminho(X1, Y1, X2, Y2, Tabuleiro).
+
+% Verifique se não há torres no caminho na diagonal.
+sem_torres_na_diagonal(X, Y, X, Y, _).
+sem_torres_na_diagonal(X1, Y1, X2, Y2, Tabuleiro) :-
+    DX is sign(X2 - X1),
+    DY is sign(Y2 - Y1),
+    X1n is X1 + DX,
+    Y1n is Y1 + DY,
+    nth0(Y1n, Tabuleiro, Linha),
+    nth0(X1n, Linha, vazio),
+    sem_torres_na_diagonal(X1n, Y1n, X2, Y2, Tabuleiro).
