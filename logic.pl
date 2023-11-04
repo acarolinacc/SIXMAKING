@@ -107,7 +107,6 @@ addNewDisk(Board, NewBoard, PlayerColor) :-
     write('Choose a cell to add a new piece.\n'),
     askCoords(Board, [PlayerColor], NewBoard, empty).
 
-% Função para mover uma torre
 moveTower(Board, NewBoard, PlayerColor) :-
     write('Choose any tower to move.\n'),
     manageRow(Row),  % Obtém a linha escolhida pelo jogador.
@@ -121,28 +120,139 @@ moveTower(Board, NewBoard, PlayerColor) :-
     nth0(RowIndex, Board, RowList),
     nth0(ColumnIndex, RowList, Piece),
 
-    is_valid_tower(Piece),  % Verifique se a torre não está vazia
-    hasCorrectColor(Piece, PlayerColor) ->  % Verifique se a torre tem a cor certa
-    write('Choose the destination cell for the tower (must not be empty and must be of your color).\n'),
-    manageRow(NewRow),       % Obtenha a linha escolhida pelo jogador
-    manageColumn(NewColumn),  % Obtenha a coluna escolhida pelo jogador
-    write('\n'),
-    % Obtenha o índice da linha e da coluna da célula de destino
-    ColumnInd is NewColumn - 1,
-    RowInd is NewRow - 1,
+    % Verifique se a torre não está vazia
+    (is_valid_tower(Piece) ->
+        % Verifique se a torre tem a cor certa
+        (hasCorrectColor(Piece, PlayerColor) ->
+            write('Choose the destination cell for the tower (must not be empty and must be of your color).\n'),
+            manageRow(NewRow),       % Obtenha a linha escolhida pelo jogador
+            manageColumn(NewColumn),  % Obtenha a coluna escolhida pelo jogador
+            write('\n'),
+            % Obtenha o índice da linha e da coluna da célula de destino
+            ColumnInd is NewColumn - 1,
+            RowInd is NewRow - 1,
 
-    % Acesse o elemento da matriz usando nth0/4 para a célula de destino
-    nth0(RowInd, Board, NewRowList),
-    nth0(ColumnInd, NewRowList, SelectedTower),
+            % Acesse o elemento da matriz usando nth0/4 para a célula de destino
+            nth0(RowInd, Board, NewRowList),
+            nth0(ColumnInd, NewRowList, SelectedTower),
 
-    append(Piece, SelectedTower, NewTower),
+            length(Piece, Size),
+            % Valide o movimento
+            (validate_move(RowIndex, ColumnIndex, RowInd, ColumnInd, Size) ->
+                append(Piece, SelectedTower, NewTower),
 
-    % Substitua a torre original na posição inicial pelo NewTower
-    replaceInMatrix(Board, RowIndex, ColumnIndex, [], TempBoard),
+                % Substitua a torre original na posição inicial pelo NewTower
+                replaceInMatrix(Board, RowIndex, ColumnIndex, [], TempBoard),
 
-    % Substitua a torre de destino pela lista vazia na matriz TempBoard
-    replaceInMatrix(TempBoard, RowInd, ColumnInd, NewTower, NewBoard).
+                % Substitua a torre de destino pela lista vazia na matriz TempBoard
+                replaceInMatrix(TempBoard, RowInd, ColumnInd, NewTower, NewBoard)
+            ; 
+                write('Invalid move for tower size. Please try again.'), nl,
+                % Recursão para tentar novamente
+                playerTurn(Board, NewBoard, PlayerColor, PlayerName)
+            )
+        ;
+            write('Invalid tower color. Please try again.'), nl,
+            % Recursão para tentar novamente
+            playerTurn(Board, NewBoard, PlayerColor, PlayerName)
+        )
+    ;
+        write('The chosen cell does not contain a valid tower. Please try again.'), nl,
+        % Recursão para tentar novamente
+        playerTurn(Board, NewBoard, PlayerColor, PlayerName)
+    ).
+
     
+% P movement
+
+% Check if the move is horizontal (same row)
+valid_horizontal_move_P(CurrentX, NewX, CurrentY, NewY) :-
+    CurrentX =:= NewX,                   % Same row
+    abs(NewY - CurrentY) =:= 1.          % Move only one cell in the row
+
+% Check if the move is vertical (same column)
+valid_vertical_move_P(CurrentX, NewX, CurrentY, NewY) :-
+    CurrentY =:= NewY,                   % Same column
+    abs(NewX - CurrentX) =:= 1.          % Move only one cell in the column
+
+% Ensure the move is either horizontal or vertical
+valid_horizontal_or_vertical_move_P(CurrentX, NewX, CurrentY, NewY) :-
+    valid_horizontal_move_P(CurrentX, NewX, CurrentY, NewY);
+    valid_vertical_move_P(CurrentX, NewX, CurrentY, NewY).
+
+% R movement
+
+valid_horizontal_move_R(CurrentX, NewX, CurrentY, NewY) :-
+    CurrentX =:= NewX,                   % Same row
+    NewX >= 0, NewX < 5.
+
+% Check if the move is vertical (same column)
+valid_vertical_move_R(CurrentX, NewX, CurrentY, NewY) :-
+    CurrentY =:= NewY,                   % Same column
+    NewY >= 0, NewY < 5.
+
+% Ensure the move is either horizontal or vertical
+valid_horizontal_or_vertical_move_R(CurrentX, NewX, CurrentY, NewY) :-
+    valid_horizontal_move_R(CurrentX, NewX, CurrentY, NewY);
+    valid_vertical_move_R(CurrentX, NewX, CurrentY, NewY).
+
+% L movement
+valid_knight_move_1(CurrentX, NewX, CurrentY, NewY) :-
+    abs(NewY - CurrentY) =:= 2,          
+    abs(NewX - CurrentX) =:= 1.          
+
+valid_knight_move_2(CurrentX, NewX, CurrentY, NewY) :-
+    abs(NewY - CurrentY) =:= 1,          
+    abs(NewX - CurrentX) =:= 2.          
+
+valid_knight_move(CurrentX, NewX, CurrentY, NewY):-
+    valid_knight_move_1(CurrentX, NewX, CurrentY, NewY);
+    valid_knight_move_2(CurrentX, NewX, CurrentY, NewY).
+
+% B movement
+valid_bishop_move(CurrentX, NewX, CurrentY, NewY) :-
+    abs(NewX - CurrentX) =:= abs(NewY - CurrentY).
+
+
+
+
+% validates all moves
+
+validate_move(CurrentX, CurrentY, NewX, NewY, 1):-
+    (valid_horizontal_or_vertical_move_P(CurrentX, NewX, CurrentY, NewY) ->
+        true
+    ;
+        write('Invalid move. Pawn can only move in horizontal or vertical moves and one cell. Try again.'),
+        false
+    ).
+
+validate_move(CurrentX, CurrentY, NewX, NewY, 2):-
+    (valid_horizontal_or_vertical_move_R(CurrentX, NewX, CurrentY, NewY) ->
+        true
+    ;
+        write('Invalid move. Rook can only move in horizontal or vertical moves. Try again.'),
+        false
+    ).
+
+validate_move(CurrentX, CurrentY, NewX, NewY, 3):-
+    (valid_knight_move(CurrentX, NewX, CurrentY, NewY) ->
+        true
+    ;
+        write('Invalid move. Knight can only move in L shape (1 step orthogonal and then 1 step diagonal). Try again.'),
+        false
+    ).
+
+validate_move(CurrentX, CurrentY, NewX, NewY, 4):-
+    (valid_bishop_move(CurrentX, NewX, CurrentY, NewY) ->
+        true
+    ;
+        write('Invalid move. Bishop only moves diagonally. Try again.'),
+        false
+    ).
+
+validate_move(CurrentX, CurrentY, NewX, NewY, 5):-
+    true.
+
 
 % Selecione uma torre válida (não vazia e da cor certa) para mover
 selectTower(Board, Player, SelectedTower) :-
@@ -176,7 +286,7 @@ askDestination(Board, Player, SelectedTower, NewBoard) :-
             )
         ;
         write('INVALID MOVE: The destination cell is empty or not of your color, please try again!\n\n'),
-        askDestination(Board, Player, SelectedTower, NewBoard)
+        askDestination(Board, Player, SelectedTower, NewBoard),
     ).
 
 
@@ -227,7 +337,7 @@ replace(List, Old, New, NewList) :-
     
 % Função principal para o turno do jogador
 playerTurn(Board, NewBoard, PlayerColor, PlayerName) :-
-    write('\n------------------ '), write(PlayerName), write(' -------------------\n\n'),
+    write('\n------------------ '), write(PlayerColor), write(' -------------------\n\n'),
     write('1. Do you want to move a tower or add a new disk? [0(Add Disk)/1(Move Tower)]'),
     manageMoveWorkerBool(MoveWorkerBool),  % Obtém a escolha do jogador (mover torre ou adicionar peça).
     (

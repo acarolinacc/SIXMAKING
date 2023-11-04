@@ -64,25 +64,9 @@ piece([white, white]) :- write('   TO    ').
 piece([white, white, white]) :- write('   CO    ').
 piece([white, white, white, white]) :- write('   BO    ').
 piece([white, white, white, white, white]) :- write('   RO    ').
+
 piece([black,1]) :- write('    X    ').
 piece([white,1]) :- write('    O    ').
-
-% Print a combination of two pieces
-piece([black, 2]) :- write('   XX   ').
-piece([white, 2]) :- write('   OO   ').
-
-% Print a combination of three pieces
-piece([black, 3]) :- write('  XXX  ').
-piece([white, 3]) :- write('  OOO  ').
-
-% Print a combination of four pieces
-piece([black, 4]) :- write('XXXX').
-piece([white, 4]) :- write('OOOO').
-
-% Print a combination of five pieces
-piece([black, 5]) :- write('XXXXX').
-piece([white, 5]) :- write('OOOOO').
-
 
 % Print the winner
 piece([black, 6]) :- write('X Wins').

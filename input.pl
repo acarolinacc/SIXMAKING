@@ -69,6 +69,6 @@ validateMoveWorkerBool(0, NewMoveWorkerBool) :-
     NewMoveWorkerBool = 0.
 
 validateMoveWorkerBool(_Bool, NewMoveWorkerBool) :-
-    write('\nERROR: That answer is not valid, please try again![0(No)/1(Yes)]'),
+    write('\nERROR: That answer is not valid, please try again![0(Add Disk)/1(Move Tower)]'),
     read(Input),
     validateMoveWorkerBool(Input, NewMoveWorkerBool).

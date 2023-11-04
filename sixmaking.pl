@@ -5,6 +5,7 @@
 :- consult('input.pl').
 :- consult('new.pl').
 :- consult('bot.pl').
+:- consult('utils.pl').
 :- use_module(library(random)).
 :- use_module(library(system)).
 
