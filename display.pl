@@ -1,11 +1,11 @@
 % Define o tabuleiro inicial
 % Defina o tabuleiro inicial com listas vazias.
 initialBoard([
-    [[], [], [], [white, 5], []],
     [[], [], [], [], []],
     [[], [], [], [], []],
-    [[], [black], [], [], []],
-    [[], [], [black, 2], [], []]
+    [[], [], [], [], []],
+    [[], [], [], [], []],
+    [[], [], [], [], []]
 ]).
 
 
@@ -53,6 +53,7 @@ printLine([Head|Tail]) :-
 % Print a piece
 piece([]) :- write('          ').
 piece([black]) :- write('    X    ').
+piece([black, black]) :- write('   XX   ').
 piece([white]) :- write('    O    ').
 piece([black,1]) :- write('    X    ').
 piece([white,1]) :- write('    O    ').

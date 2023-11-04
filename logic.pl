@@ -110,9 +110,39 @@ addNewDisk(Board, NewBoard, PlayerColor) :-
 % Função para mover uma torre
 moveTower(Board, NewBoard, PlayerColor) :-
     write('Choose any tower to move.\n'),
-    selectTower(Board, [PlayerColor], SelectedTower),  % Escolha de uma torre
+    manageRow(Row),  % Obtém a linha escolhida pelo jogador.
+    manageColumn(Column),  % Obtém a coluna escolhida pelo jogador.
+    write('\n'),
+    % Obtenha o índice da linha e da coluna
+    ColumnIndex is Column - 1,
+    RowIndex is Row - 1,
+
+    % Acesse o elemento da matriz usando nth0/4
+    nth0(RowIndex, Board, RowList),
+    nth0(ColumnIndex, RowList, Piece),
+
+    is_valid_tower(Piece),  % Verifique se a torre não está vazia
+    hasCorrectColor(Piece, PlayerColor) ->  % Verifique se a torre tem a cor certa
     write('Choose the destination cell for the tower (must not be empty and must be of your color).\n'),
-    askDestination(Board, [PlayerColor], SelectedTower, NewBoard).
+    manageRow(NewRow),       % Obtenha a linha escolhida pelo jogador
+    manageColumn(NewColumn),  % Obtenha a coluna escolhida pelo jogador
+    write('\n'),
+    % Obtenha o índice da linha e da coluna da célula de destino
+    ColumnInd is NewColumn - 1,
+    RowInd is NewRow - 1,
+
+    % Acesse o elemento da matriz usando nth0/4 para a célula de destino
+    nth0(RowInd, Board, NewRowList),
+    nth0(ColumnInd, NewRowList, SelectedTower),
+
+    append(Piece, SelectedTower, NewTower),
+
+    % Substitua a torre original na posição inicial pelo NewTower
+    replaceInMatrix(Board, Row, Column, NewTower, TempBoard),
+
+    % Substitua a torre de destino pela lista vazia na matriz TempBoard
+    replaceInMatrix(TempBoard, NewRow, NewColumn, [], NewBoard).
+    
 
 % Selecione uma torre válida (não vazia e da cor certa) para mover
 selectTower(Board, Player, SelectedTower) :-
