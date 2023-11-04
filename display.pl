@@ -53,8 +53,17 @@ printLine([Head|Tail]) :-
 % Print a piece
 piece([]) :- write('          ').
 piece([black]) :- write('    X    ').
-piece([black, black]) :- write('   XX   ').
+piece([black, black]) :- write('   TX    ').
+piece([black, black, black]) :- write('   CX    ').
+piece([black, black, black, black]) :- write('   BX    ').
+piece([black, black, black, black, black]) :- write('   RX    ').
+
+
 piece([white]) :- write('    O    ').
+piece([white, white]) :- write('   TO    ').
+piece([white, white, white]) :- write('   CO    ').
+piece([white, white, white, white]) :- write('   BO    ').
+piece([white, white, white, white, white]) :- write('   RO    ').
 piece([black,1]) :- write('    X    ').
 piece([white,1]) :- write('    O    ').
 

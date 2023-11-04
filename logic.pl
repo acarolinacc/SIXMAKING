@@ -138,10 +138,10 @@ moveTower(Board, NewBoard, PlayerColor) :-
     append(Piece, SelectedTower, NewTower),
 
     % Substitua a torre original na posição inicial pelo NewTower
-    replaceInMatrix(Board, Row, Column, NewTower, TempBoard),
+    replaceInMatrix(Board, RowIndex, ColumnIndex, [], TempBoard),
 
     % Substitua a torre de destino pela lista vazia na matriz TempBoard
-    replaceInMatrix(TempBoard, NewRow, NewColumn, [], NewBoard).
+    replaceInMatrix(TempBoard, RowInd, ColumnInd, NewTower, NewBoard).
     
 
 % Selecione uma torre válida (não vazia e da cor certa) para mover
