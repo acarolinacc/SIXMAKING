@@ -1,5 +1,6 @@
 :- dynamic board/1.          % Declara a estrutura dinâmica board/1.
 :- dynamic previousBoard/1.  % Declara a estrutura dinâmica previousBoard/1.
+:- consult('utils.pl').
 
 % Inicializa o tabuleiro no início do jogo.
 initBoard :-
@@ -172,6 +173,121 @@ moveTower(Board, NewBoard, PlayerColor) :-
     ).
 
 
+
+removeAndMovePieces(Board, NewBoard, PlayerColor) :-
+    write('Choose a tower cell to remove pieces from.\n'),
+    readRow(Row),  % Obtenha a linha escolhida pelo jogador.
+    readColumn(Column),  % Obtenha a coluna escolhida pelo jogador.
+    
+    % Obtenha o índice da linha e da coluna
+    RowIndex is Row - 1,
+    ColumnIndex is Column - 1,
+
+    % Verifique se a linha e a coluna escolhidas estão dentro dos limites válidos
+    (
+        is_valid_index(Board, RowIndex, ColumnIndex, PlayerColor),
+        nth0(RowIndex, Board, RowList),
+        nth0(ColumnIndex, RowList, Piece),
+        
+        % Verifique se a torre não está vazia
+        is_valid_tower(Piece),
+        
+        % Verifique se a torre tem a cor certa
+        hasCorrectColor(Piece, PlayerColor),
+
+        length(Piece, Size),
+        write('How many pieces do you want to remove? (Enter a number): '),
+        read(NumPieces),
+
+        (NumPieces >= 0, NumPieces =< Size ->
+            % O jogador escolheu a quantidade correta de peças para remover.
+            write('You selected to remove '), write(NumPieces), write(' pieces.'), nl,
+
+            write('Choose the destination cell for the tower (must not be empty and must be of your color).\n'),
+            readRow(NewRow),  % Obtenha a linha escolhida pelo jogador.
+            readColumn(NewColumn),  % Obtenha a coluna escolhida pelo jogador.
+
+            % Obtenha o índice da nova linha e da nova coluna
+            NewRowIndex is NewRow - 1,
+            NewColumnIndex is NewColumn - 1,
+
+            (
+                is_valid_index(Board, RowIndex, ColumnIndex, PlayerColor),
+                nth0(NewRowIndex, Board, NewRowList),
+                nth0(NewColumnIndex, NewRowList, SelectedTower),
+                origin is Size - NumPieces,
+                remove_n_elements(NumPieces, Piece, ResultList), % Peça original
+                add_n_elements(NumPieces, PlayerColor, SelectedTower, ResultListt), % Peça de destino
+
+                (
+                    check_move(RowIndex, ColumnIndex, NewRowIndex, NewColumnIndex, NumPieces) ->
+                        replaceInMatrix(Board, RowIndex, ColumnIndex, ResultListt, TempBoard),
+                        replaceInMatrix(TempBoard, NewRowIndex, NewColumnIndex, ResultList, NewBoard),
+                        (
+                            winning_condition(PlayerColor, NewTower) ->
+                                true  % Vitória alcançada, o jogo termina
+                            ;
+                                % Vitória não alcançada, continue o jogo
+                                write('Valid move. Continue playing.\n')
+                        )
+                    ;
+                        write('Invalid move for tower size. Please try again.'), nl,
+                        % Recursão para tentar novamente
+                        removeAndMovePieces(Board, NewBoard, PlayerColor)
+                )
+            ;
+                write('Invalid destination cell. Please try again.'), nl,
+                % Recursão para tentar novamente
+                removeAndMovePieces(Board, NewBoard, PlayerColor)
+            )
+        ;
+            % O jogador escolheu um número de peças inválido.
+            write('Invalid input. Please enter a number between 0 and '), write(Size), nl,
+            % Recursão para tentar novamente
+            removeAndMovePieces(Board, NewBoard, PlayerColor)
+        )
+    ;
+        % A célula escolhida não contém uma torre válida.
+        write('The chosen cell does not contain a valid tower. Please try again.'), nl,
+        % Recursão para tentar novamente
+        removeAndMovePieces(Board, NewBoard, PlayerColor)
+    ).
+
+
+is_valid_index(Board, RowIndex, ColumnIndex, PlayerColor) :- 
+    % Verifique se a célula de destino não está vazia e é da cor do jogador
+    nth0(RowIndex, Board, RowList),
+    nth0(ColumnIndex, RowList, DestCell),
+    is_valid_tower(DestCell),
+    hasCorrectColor(DestCell, PlayerColor).
+
+
+% Predicado para adicionar N elementos a uma lista
+add_n_elements(N, Element, InputList, ResultList) :-
+    add_n_elements(N, Element, InputList, ResultList, []).
+
+% Caso base: quando N é zero, a lista resultante é a mesma que a lista de entrada
+add_n_elements(0, _, ResultList, ResultList, _).
+
+% Caso recursivo: adicionar o elemento à lista e continuar com N-1
+add_n_elements(N, Element, InputList, ResultList, Acc) :-
+    N > 0,
+    N1 is N - 1,
+    add_n_elements(N1, Element, InputList, ResultList, [Element | Acc]).
+
+% Predicado para remover N elementos de uma lista
+remove_n_elements(N, InputList, ResultList) :-
+    remove_n_elements(N, InputList, ResultList, []).
+
+% Caso base: quando N é zero, a lista resultante é a mesma que a lista de entrada
+remove_n_elements(0, ResultList, ResultList, _).
+
+% Caso recursivo: remove o primeiro elemento da lista e continua com N-1
+remove_n_elements(N, [Head | Tail], ResultList, Acc) :-
+    N > 0,
+    N1 is N - 1,
+    remove_n_elements(N1, Tail, ResultList, [Head | Acc]).
+
 % Condição de vitória
 winning_condition(PlayerColor, NewTower) :-
     length(NewTower, Size),
@@ -182,13 +298,15 @@ winning_condition(PlayerColor, NewTower) :-
 % Função principal para o turno do jogador
 playerTurn(Board, NewBoard, PlayerColor, PlayerName) :-
     write('\n------------------ '), write(PlayerColor), write(' -------------------\n\n'),
-    write('1. Do you want to move a tower or add a new disk? [0(Add Disk)/1(Move Tower)]'),
+    write('1. Do you want to move a tower or add a new disk? [0(Add Disk)/1(Move Tower)/2(Move Part of Tower)]\n'),
     manageMoveWorkerBool(MoveWorkerBool),  % Obtém a escolha do jogador (mover torre ou adicionar peça).
     (
         MoveWorkerBool =:= 1 ->
             moveTower(Board, NewBoard, PlayerColor)   % O jogador escolhe mover uma torre.
-        ;
+        ; MoveWorkerBool =:= 0 ->
             addNewDisk(Board, NewBoard, PlayerColor)  % O jogador escolhe adicionar uma nova peça.
+        ; MoveWorkerBool =:= 2 ->
+            removeAndMovePieces(Board, NewBoard, PlayerColor)
     ),
     printBoard(NewBoard).  % Imprime o tabuleiro após a jogada.
 

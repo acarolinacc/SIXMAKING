@@ -3,8 +3,6 @@
 :- consult('logic.pl').
 :- consult('utilities.pl').
 :- consult('input.pl').
-:- consult('new.pl').
-:- consult('bot.pl').
 :- consult('utils.pl').
 :- consult('moves.pl').
 :- use_module(library(random)).

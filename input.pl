@@ -62,6 +62,9 @@ manageMoveWorkerBool(NewMoveWorkerBool):-
       read(MoveWorkerBool),
       validateMoveWorkerBool(MoveWorkerBool, NewMoveWorkerBool).
 
+validateMoveWorkerBool(2, NewMoveWorkerBool) :-
+    NewMoveWorkerBool = 2.
+
 validateMoveWorkerBool(1, NewMoveWorkerBool) :-
     NewMoveWorkerBool = 1.
 

@@ -28,9 +28,6 @@ getValueFromMatrix([H|T], Row, Column, Value) :-
     Row1 is Row - 1,
     getValueFromMatrix(T, Row1, Column, Value).
 
-
-/*Verifica se o tabuleiro está cheio, confirmando se não há nenhuma célula
-‘empty’ no tabuleiro.*/
 checkFullBoard(Board) :-
       \+ (append(_, [R|_], Board),
 	append(_, ['empty'|_], R)).

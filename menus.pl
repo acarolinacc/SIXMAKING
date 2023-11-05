@@ -42,8 +42,12 @@ manageInput(1) :-
     mainMenu.
 
 manageInput(2) :-
-    playGame(Board, PlayerColor),
-    mainMenu.
+    printComputer.
+
+printComputer :-
+    write('Choose a computer opponent \n'),
+    write('1. Lazy\n'),
+    write('2. MasterMind\n').
 
 manageInput(3) :-
     startGame('C','C'),
