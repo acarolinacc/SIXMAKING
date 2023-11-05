@@ -6,6 +6,7 @@
 :- consult('new.pl').
 :- consult('bot.pl').
 :- consult('utils.pl').
+:- consult('moves.pl').
 :- use_module(library(random)).
 :- use_module(library(system)).
 

@@ -107,6 +107,7 @@ addNewDisk(Board, NewBoard, PlayerColor) :-
     write('Choose a cell to add a new piece.\n'),
     askCoords(Board, [PlayerColor], NewBoard, empty).
 
+% Função para mover uma torre
 moveTower(Board, NewBoard, PlayerColor) :-
     write('Choose any tower to move.\n'),
     manageRow(Row),  % Obtém a linha escolhida pelo jogador.
@@ -145,7 +146,15 @@ moveTower(Board, NewBoard, PlayerColor) :-
                 replaceInMatrix(Board, RowIndex, ColumnIndex, [], TempBoard),
 
                 % Substitua a torre de destino pela lista vazia na matriz TempBoard
-                replaceInMatrix(TempBoard, RowInd, ColumnInd, NewTower, NewBoard)
+                replaceInMatrix(TempBoard, RowInd, ColumnInd, NewTower, NewBoard),
+
+                % Verifique a condição de vitória
+                (winning_condition(PlayerColor, NewTower) ->
+                    true  % Vitória alcançada, o jogo termina
+                ;
+                    % Vitória não alcançada, continue o jogo
+                    write('Valid move. Continue playing.\n')
+                )
             ; 
                 write('Invalid move for tower size. Please try again.'), nl,
                 % Recursão para tentar novamente
@@ -162,179 +171,14 @@ moveTower(Board, NewBoard, PlayerColor) :-
         playerTurn(Board, NewBoard, PlayerColor, PlayerName)
     ).
 
-    
-% P movement
 
-% Check if the move is horizontal (same row)
-valid_horizontal_move_P(CurrentX, NewX, CurrentY, NewY) :-
-    CurrentX =:= NewX,                   % Same row
-    abs(NewY - CurrentY) =:= 1.          % Move only one cell in the row
+% Condição de vitória
+winning_condition(PlayerColor, NewTower) :-
+    length(NewTower, Size),
+    (Size =:= 6 ->
+        write('Congratulations! Player '), write(PlayerColor), write(' wins the game!'), nl, nl
+    ; true).
 
-% Check if the move is vertical (same column)
-valid_vertical_move_P(CurrentX, NewX, CurrentY, NewY) :-
-    CurrentY =:= NewY,                   % Same column
-    abs(NewX - CurrentX) =:= 1.          % Move only one cell in the column
-
-% Ensure the move is either horizontal or vertical
-valid_horizontal_or_vertical_move_P(CurrentX, NewX, CurrentY, NewY) :-
-    valid_horizontal_move_P(CurrentX, NewX, CurrentY, NewY);
-    valid_vertical_move_P(CurrentX, NewX, CurrentY, NewY).
-
-% R movement
-
-valid_horizontal_move_R(CurrentX, NewX, CurrentY, NewY) :-
-    CurrentX =:= NewX,                   % Same row
-    NewX >= 0, NewX < 5.
-
-% Check if the move is vertical (same column)
-valid_vertical_move_R(CurrentX, NewX, CurrentY, NewY) :-
-    CurrentY =:= NewY,                   % Same column
-    NewY >= 0, NewY < 5.
-
-% Ensure the move is either horizontal or vertical
-valid_horizontal_or_vertical_move_R(CurrentX, NewX, CurrentY, NewY) :-
-    valid_horizontal_move_R(CurrentX, NewX, CurrentY, NewY);
-    valid_vertical_move_R(CurrentX, NewX, CurrentY, NewY).
-
-% L movement
-valid_knight_move_1(CurrentX, NewX, CurrentY, NewY) :-
-    abs(NewY - CurrentY) =:= 2,          
-    abs(NewX - CurrentX) =:= 1.          
-
-valid_knight_move_2(CurrentX, NewX, CurrentY, NewY) :-
-    abs(NewY - CurrentY) =:= 1,          
-    abs(NewX - CurrentX) =:= 2.          
-
-valid_knight_move(CurrentX, NewX, CurrentY, NewY):-
-    valid_knight_move_1(CurrentX, NewX, CurrentY, NewY);
-    valid_knight_move_2(CurrentX, NewX, CurrentY, NewY).
-
-% B movement
-valid_bishop_move(CurrentX, NewX, CurrentY, NewY) :-
-    abs(NewX - CurrentX) =:= abs(NewY - CurrentY).
-
-
-
-
-% validates all moves
-
-validate_move(CurrentX, CurrentY, NewX, NewY, 1):-
-    (valid_horizontal_or_vertical_move_P(CurrentX, NewX, CurrentY, NewY) ->
-        true
-    ;
-        write('Invalid move. Pawn can only move in horizontal or vertical moves and one cell. Try again.'),
-        false
-    ).
-
-validate_move(CurrentX, CurrentY, NewX, NewY, 2):-
-    (valid_horizontal_or_vertical_move_R(CurrentX, NewX, CurrentY, NewY) ->
-        true
-    ;
-        write('Invalid move. Rook can only move in horizontal or vertical moves. Try again.'),
-        false
-    ).
-
-validate_move(CurrentX, CurrentY, NewX, NewY, 3):-
-    (valid_knight_move(CurrentX, NewX, CurrentY, NewY) ->
-        true
-    ;
-        write('Invalid move. Knight can only move in L shape (1 step orthogonal and then 1 step diagonal). Try again.'),
-        false
-    ).
-
-validate_move(CurrentX, CurrentY, NewX, NewY, 4):-
-    (valid_bishop_move(CurrentX, NewX, CurrentY, NewY) ->
-        true
-    ;
-        write('Invalid move. Bishop only moves diagonally. Try again.'),
-        false
-    ).
-
-validate_move(CurrentX, CurrentY, NewX, NewY, 5):-
-    true.
-
-
-% Selecione uma torre válida (não vazia e da cor certa) para mover
-selectTower(Board, Player, SelectedTower) :-
-    manageRow(Row),       % Obtenha a linha escolhida pelo jogador
-    manageColumn(Column),  % Obtenha a coluna escolhida pelo jogador
-    get_piece(Board, Row, Column, Piece),
-    (
-        is_valid_tower(Piece),  % Verifique se a torre não está vazia
-        hasCorrectColor(Piece, Player) -> SelectedTower = Piece  % Verifique se a torre tem a cor certa
-        ;
-        write('INVALID MOVE: The selected tower is empty or not of your color, please try again!\n\n'),
-        selectTower(Board, Player, SelectedTower)
-    ).
-
-% Solicita a escolha de uma célula de destino que não esteja vazia e da cor certa
-askDestination(Board, Player, SelectedTower, NewBoard) :-
-    manageRow(Row),       % Obtenha a linha escolhida pelo jogador
-    manageColumn(Column),  % Obtenha a coluna escolhida pelo jogador
-    get_piece(Board, Row, Column, Piece),
-    (
-        is_not_empty(Piece),  % Verifique se a célula de destino não está vazia
-        hasCorrectColor(Piece, Player) ->  % Verifique se a célula de destino tem a cor certa
-            (
-                is_valid_tower(Piece) ->  % Verifique se a célula de destino contém uma torre
-                    write('INVALID MOVE: The destination cell must not be empty, please try again!\n\n'),
-                    askDestination(Board, Player, SelectedTower, NewBoard)
-                ;
-                remove_piece(Board, Row, Column, TempBoard),
-                add_piece(TempBoard, Row, Column, SelectedTower, NewBoard),
-                printBoard(NewBoard)  % Imprima o tabuleiro após a jogada
-            )
-        ;
-        write('INVALID MOVE: The destination cell is empty or not of your color, please try again!\n\n'),
-        askDestination(Board, Player, SelectedTower, NewBoard),
-    ).
-
-
-% Verifica se uma peça tem a cor correta
-hasCorrectColor(Piece, Player) :-
-    Piece = [Player|_].
-
-% Obtém o elemento em uma posição específica da lista
-nth1(1, [X|_], X).
-nth1(N, [_|T], X) :-
-    N > 1,
-    N1 is N - 1,
-    nth1(N1, T, X).
-
-
-% Obtém a peça em uma posição específica do tabuleiro
-get_piece(Board, Row, Col, Piece) :-
-    nth1(Row, Board, RowList),  % Obtém a linha (lista) correspondente à linha 'Row'
-    nth1(Col, RowList, Piece).  % Obtém a coluna (elemento) correspondente à coluna 'Col'
-
-% Remove uma peça de uma posição específica do tabuleiro
-remove_piece(Board, Row, Col, NewBoard) :-
-    nth1(Row, Board, RowList),     % Obtém a linha (lista) correspondente à linha 'Row'
-    select(_, RowList, NewRowList), % Remove um elemento da linha
-    replace(Board, Row, NewRowList, NewBoard).  % Atualiza a linha no novo tabuleiro
-
-% Adiciona uma peça a uma posição específica do tabuleiro
-add_piece(Board, Row, Col, Piece, NewBoard) :-
-    nth1(Row, Board, RowList),        % Obtém a linha (lista) correspondente à linha 'Row'
-    nth1(Col, RowList, CurrentPiece),  % Obtém a peça atual na posição
-    append([Piece], CurrentPiece, NewPiece),  % Adiciona a nova peça à pilha da posição
-    select(CurrentPiece, RowList, UpdatedRowList),  % Remove a peça antiga da linha
-    nth1(Row, NewBoard, UpdatedRowList, NewRowList),  % Atualiza a linha no novo tabuleiro
-    replace(Board, Row, NewRowList, NewBoard).  % Atualiza o tabuleiro com a nova linha
-
-% Verifica se uma torre é válida (não vazia)
-is_valid_tower(Tower) :- Tower \= [].
-
-% Verifica se uma posição não está vazia
-is_not_empty(Piece) :- Piece \= [].
-
-% Substitui o elemento 'Old' por 'New' na lista 'List' e retorna 'NewList'
-replace(List, Old, New, NewList) :-
-    select(Old, List, TempList),
-    append([New], TempList, NewList).
-
-
-    
 % Função principal para o turno do jogador
 playerTurn(Board, NewBoard, PlayerColor, PlayerName) :-
     write('\n------------------ '), write(PlayerColor), write(' -------------------\n\n'),
@@ -366,97 +210,3 @@ startGame(Player1, Player2) :-
       initialBoard(InitialBoard),  % Obtém um tabuleiro inicial.
       addWorkers(InitialBoard, WorkersBoard, Player1, Player2),  % Adiciona trabalhadores aos tabuleiros.
       gameLoop(WorkersBoard, Player1, Player2).  % Inicia o loop do jogo.
-
-
-
-
-
-
-
-
-
-
-% Definição da função nth0/3
-nth0(0, [X|_], X).
-nth0(N, [_|Resto], Elemento) :-
-    N > 0,
-    N1 is N - 1,
-    nth0(N1, Resto, Elemento).
-
-
-% Defina as regras de movimento para o Peão
-move(peao, X1/Y1, X2/Y2, Tabuleiro) :-
-    % Certifique-se de que as coordenadas X1/Y1 estão ocupadas por uma torre.
-    nth0(Y1, Tabuleiro, Linha),
-    nth0(X1, Linha, torre),
-    % Verifique se X2/Y2 está em uma das quatro direções adjacentes.
-    (X2 is X1 + 1, Y2 = Y1; X2 is X1 - 1, Y2 = Y1; X2 = X1, Y2 is Y1 + 1; X2 = X1, Y2 is Y1 - 1),
-    % Certifique-se de que X2/Y2 está dentro dos limites do tabuleiro.
-    dentro_dos_limites(X2, Y2, Tabuleiro).
-
-% Defina as regras de movimento para a Torre
-move(torre, X1/Y1, X2/Y2, Tabuleiro) :-
-    % Certifique-se de que as coordenadas X1/Y1 estão ocupadas por uma torre.
-    nth0(Y1, Tabuleiro, Linha),
-    nth0(X1, Linha, torre),
-    % Certifique-se de que X2/Y2 está em uma direção ortogonal (horizontal ou vertical).
-    (X1 = X2; Y1 = Y2),
-    % Verifique se não há torres no caminho entre X1/Y1 e X2/Y2.
-    sem_torres_no_caminho(X1, Y1, X2, Y2, Tabuleiro).
-
-% Verifique se X/Y está dentro dos limites do tabuleiro.
-dentro_dos_limites(X, Y, Tabuleiro) :-
-    length(Tabuleiro, Tam),
-    X >= 0, Y >= 0, X < Tam, Y < Tam.
-
-% Verifique se não há torres no caminho entre X1/Y1 e X2/Y2.
-sem_torres_no_caminho(X, Y, X, Y, _).
-sem_torres_no_caminho(X1, Y1, X2, Y2, Tabuleiro) :-
-    (X1 = X2, Y1 < Y2, Y is Y1 + 1; X1 = X2, Y1 > Y2, Y is Y1 - 1),
-    nth0(Y, Tabuleiro, Linha),
-    nth0(X1, Linha, vazio),
-    sem_torres_no_caminho(X1, Y, X2, Y2, Tabuleiro).
-
-% Defina as regras de movimento para o Cavalo
-move(cavalo, X1/Y1, X2/Y2, Tabuleiro) :-
-    % Certifique-se de que as coordenadas X1/Y1 estão ocupadas por uma torre.
-    nth0(Y1, Tabuleiro, Linha),
-    nth0(X1, Linha, torre),
-    % Verifique as possíveis posições de destino para um movimento em forma de "L".
-    PossiveisDestinos = [X1-2/Y1-1, X1-2/Y1+1, X1-1/Y1-2, X1-1/Y1+2, X1+1/Y1-2, X1+1/Y1+2, X1+2/Y1-1, X1+2/Y1+1],
-    member(X2/Y2, PossiveisDestinos),
-    % Certifique-se de que X2/Y2 está dentro dos limites do tabuleiro.
-    dentro_dos_limites(X2, Y2, Tabuleiro).
-
-% Defina as regras de movimento para o Bispo
-move(bispo, X1/Y1, X2/Y2, Tabuleiro) :-
-    % Certifique-se de que as coordenadas X1/Y1 estão ocupadas por uma torre.
-    nth0(Y1, Tabuleiro, Linha),
-    nth0(X1, Linha, torre),
-    % Verifique se o movimento é diagonal (delta X é igual ao delta Y).
-    DX is abs(X2 - X1),
-    DY is abs(Y2 - Y1),
-    DX = DY,
-    % Verifique se não há torres no caminho entre X1/Y1 e X2/Y2 na diagonal.
-    sem_torres_na_diagonal(X1, Y1, X2, Y2, Tabuleiro).
-
-% Defina as regras de movimento para a Rainha
-move(rainha, X1/Y1, X2/Y2, Tabuleiro) :-
-    % Certifique-se de que as coordenadas X1/Y1 estão ocupadas por uma torre.
-    nth0(Y1, Tabuleiro, Linha),
-    nth0(X1, Linha, torre),
-    % Verifique se o movimento é ortogonal ou diagonal.
-    (X1 = X2; Y1 = Y2; abs(X2 - X1) = abs(Y2 - Y1)),
-    % Verifique se não há torres no caminho entre X1/Y1 e X2/Y2 na direção escolhida.
-    sem_torres_no_caminho(X1, Y1, X2, Y2, Tabuleiro).
-
-% Verifique se não há torres no caminho na diagonal.
-sem_torres_na_diagonal(X, Y, X, Y, _).
-sem_torres_na_diagonal(X1, Y1, X2, Y2, Tabuleiro) :-
-    DX is sign(X2 - X1),
-    DY is sign(Y2 - Y1),
-    X1n is X1 + DX,
-    Y1n is Y1 + DY,
-    nth0(Y1n, Tabuleiro, Linha),
-    nth0(X1n, Linha, vazio),
-    sem_torres_na_diagonal(X1n, Y1n, X2, Y2, Tabuleiro).
