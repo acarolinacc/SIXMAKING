@@ -42,7 +42,7 @@ manageInput(1) :-
     mainMenu.
 
 manageInput(2) :-
-    startGame('P','C'),
+    playGame(Board, PlayerColor),
     mainMenu.
 
 manageInput(3) :-

@@ -1,89 +1,30 @@
-% P movement
+% Define piece types
+piece(pawn, 1).
+piece(rook, 2).
+piece(knight, 3).
+piece(bishop, 4).
+piece(_, 5).
 
-% Check if the move is horizontal (same row)
-valid_horizontal_move_P(CurrentX, NewX, CurrentY, NewY) :-
-    CurrentX =:= NewX,                   % Same row
-    abs(NewY - CurrentY) =:= 1.          % Move only one cell in the row
+% Define movement rules
+chess_moves(pawn, Row, NewRow, Column, NewColumn) :-
+    (Row =:= NewRow, abs(NewColumn - Column) =:= 1) ; (Column =:= NewColumn, abs(NewRow - Row) =:= 1).
 
-% Check if the move is vertical (same column)
-valid_vertical_move_P(CurrentX, NewX, CurrentY, NewY) :-
-    CurrentY =:= NewY,                   % Same column
-    abs(NewX - CurrentX) =:= 1.          % Move only one cell in the column
+chess_moves(rook, Row, NewRow, Column, NewColumn) :-
+    (Row =:= NewRow, NewRow >= 0, NewRow < 5) ; (Column =:= NewColumn, NewColumn >= 0, NewColumn < 5).
 
-% Ensure the move is either horizontal or vertical
-valid_horizontal_or_vertical_move_P(CurrentX, NewX, CurrentY, NewY) :-
-    valid_horizontal_move_P(CurrentX, NewX, CurrentY, NewY);
-    valid_vertical_move_P(CurrentX, NewX, CurrentY, NewY).
+chess_moves(knight, Row, NewRow, Column, NewColumn) :-
+    (abs(NewColumn - Column) =:= 2, abs(NewRow - Row) =:= 1) ; (abs(NewColumn - Column) =:= 1, abs(NewRow - Row) =:= 2).
 
-% R movement
+chess_moves(bishop, Row, NewRow, Column, NewColumn) :-
+    abs(NewRow - Row) =:= abs(NewColumn - Column).
 
-valid_horizontal_move_R(CurrentX, NewX, CurrentY, NewY) :-
-    CurrentX =:= NewX,                   % Same row
-    NewX >= 0, NewX < 5.
-
-% Check if the move is vertical (same column)
-valid_vertical_move_R(CurrentX, NewX, CurrentY, NewY) :-
-    CurrentY =:= NewY,                   % Same column
-    NewY >= 0, NewY < 5.
-
-% Ensure the move is either horizontal or vertical
-valid_horizontal_or_vertical_move_R(CurrentX, NewX, CurrentY, NewY) :-
-    valid_horizontal_move_R(CurrentX, NewX, CurrentY, NewY);
-    valid_vertical_move_R(CurrentX, NewX, CurrentY, NewY).
-
-% L movement
-valid_knight_move_1(CurrentX, NewX, CurrentY, NewY) :-
-    abs(NewY - CurrentY) =:= 2,          
-    abs(NewX - CurrentX) =:= 1.          
-
-valid_knight_move_2(CurrentX, NewX, CurrentY, NewY) :-
-    abs(NewY - CurrentY) =:= 1,          
-    abs(NewX - CurrentX) =:= 2.          
-
-valid_knight_move(CurrentX, NewX, CurrentY, NewY):-
-    valid_knight_move_1(CurrentX, NewX, CurrentY, NewY);
-    valid_knight_move_2(CurrentX, NewX, CurrentY, NewY).
-
-% B movement
-valid_bishop_move(CurrentX, NewX, CurrentY, NewY) :-
-    abs(NewX - CurrentX) =:= abs(NewY - CurrentY).
-
-
-
-
-% validates all moves
-
-validate_move(CurrentX, CurrentY, NewX, NewY, 1):-
-    (valid_horizontal_or_vertical_move_P(CurrentX, NewX, CurrentY, NewY) ->
+% Validate all moves
+check_move(Row, Column, NewRow, NewColumn, PieceType) :-
+    piece(Piece, PieceType),
+    (chess_moves(Piece, Row, NewRow, Column, NewColumn) ->
         true
     ;
-        write('Invalid move. Pawn can only move in horizontal or vertical moves and one cell. Try again.'),
+        format('Invalid move. ~w can only make the specified move. Try again.~n', [Piece]),
         false
     ).
 
-validate_move(CurrentX, CurrentY, NewX, NewY, 2):-
-    (valid_horizontal_or_vertical_move_R(CurrentX, NewX, CurrentY, NewY) ->
-        true
-    ;
-        write('Invalid move. Rook can only move in horizontal or vertical moves. Try again.'),
-        false
-    ).
-
-validate_move(CurrentX, CurrentY, NewX, NewY, 3):-
-    (valid_knight_move(CurrentX, NewX, CurrentY, NewY) ->
-        true
-    ;
-        write('Invalid move. Knight can only move in L shape (1 step orthogonal and then 1 step diagonal). Try again.'),
-        false
-    ).
-
-validate_move(CurrentX, CurrentY, NewX, NewY, 4):-
-    (valid_bishop_move(CurrentX, NewX, CurrentY, NewY) ->
-        true
-    ;
-        write('Invalid move. Bishop only moves diagonally. Try again.'),
-        false
-    ).
-
-validate_move(CurrentX, CurrentY, NewX, NewY, 5):-
-    true.

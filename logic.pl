@@ -139,7 +139,7 @@ moveTower(Board, NewBoard, PlayerColor) :-
 
             length(Piece, Size),
             % Valide o movimento
-            (validate_move(RowIndex, ColumnIndex, RowInd, ColumnInd, Size) ->
+            (check_move(RowIndex, ColumnIndex, RowInd, ColumnInd, Size) ->
                 append(Piece, SelectedTower, NewTower),
 
                 % Substitua a torre original na posição inicial pelo NewTower
