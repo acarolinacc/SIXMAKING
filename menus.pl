@@ -42,7 +42,9 @@ manageInput(1) :-
     mainMenu.
 
 manageInput(2) :-
-    printComputer.
+    printComputer,
+    startGameBot('P','C'),
+    mainMenu.
 
 printComputer :-
     write('Choose a computer opponent \n'),
@@ -50,7 +52,7 @@ printComputer :-
     write('2. MasterMind\n').
 
 manageInput(3) :-
-    startGame('C','C'),
+    startGameBotBot('C','C'),
     mainMenu.
 
 manageInput(4) :- % This is for "Instructions"

@@ -78,7 +78,7 @@ askCoords(Board, Player, NewBoard, Expected) :-
 
 
 % Adiciona trabalhadores ao tabuleiro.
-addWorkers(InitialBoard, WorkersBoard, 'P', 'P') :-
+addPieces(InitialBoard, PiecesBoard, 'P', 'P') :-
       printBoard(InitialBoard),  % Imprime o tabuleiro inicial.
       write('\n------------------ PLAYER X -------------------\n\n'),
       write('1. Choose pawn cell.\n'),
@@ -86,8 +86,8 @@ addWorkers(InitialBoard, WorkersBoard, 'P', 'P') :-
       printBoard(Worker1Board),  % Imprime o tabuleiro após o jogador X escolher uma célula.
       write('\n------------------ PLAYER O -------------------\n\n'),
       write('1. Choose pawn cell.\n'),
-      askCoords(Worker1Board, [white], WorkersBoard, empty),
-      printBoard(WorkersBoard).  % Imprime o tabuleiro após o jogador O escolher uma célula.
+      askCoords(Worker1Board, [white], PiecesBoard, empty),
+      printBoard(PiecesBoard).  % Imprime o tabuleiro após o jogador O escolher uma célula.
 
 % Funções para a vez do jogador preto e branco.
 blackPlayerTurn(Board, NewBoard, 'P') :-
@@ -224,7 +224,7 @@ removeAndMovePieces(Board, NewBoard, PlayerColor) :-
                         replaceInMatrix(Board, RowIndex, ColumnIndex, ResultListt, TempBoard),
                         replaceInMatrix(TempBoard, NewRowIndex, NewColumnIndex, ResultList, NewBoard),
                         (
-                            winning_condition(PlayerColor, NewTower) ->
+                            winning_condition(PlayerColor, ResultListt) ->
                                 true  % Vitória alcançada, o jogo termina
                             ;
                                 % Vitória não alcançada, continue o jogo
@@ -253,40 +253,6 @@ removeAndMovePieces(Board, NewBoard, PlayerColor) :-
         removeAndMovePieces(Board, NewBoard, PlayerColor)
     ).
 
-
-is_valid_index(Board, RowIndex, ColumnIndex, PlayerColor) :- 
-    % Verifique se a célula de destino não está vazia e é da cor do jogador
-    nth0(RowIndex, Board, RowList),
-    nth0(ColumnIndex, RowList, DestCell),
-    is_valid_tower(DestCell),
-    hasCorrectColor(DestCell, PlayerColor).
-
-
-% Predicado para adicionar N elementos a uma lista
-add_n_elements(N, Element, InputList, ResultList) :-
-    add_n_elements(N, Element, InputList, ResultList, []).
-
-% Caso base: quando N é zero, a lista resultante é a mesma que a lista de entrada
-add_n_elements(0, _, ResultList, ResultList, _).
-
-% Caso recursivo: adicionar o elemento à lista e continuar com N-1
-add_n_elements(N, Element, InputList, ResultList, Acc) :-
-    N > 0,
-    N1 is N - 1,
-    add_n_elements(N1, Element, InputList, ResultList, [Element | Acc]).
-
-% Predicado para remover N elementos de uma lista
-remove_n_elements(N, InputList, ResultList) :-
-    remove_n_elements(N, InputList, ResultList, []).
-
-% Caso base: quando N é zero, a lista resultante é a mesma que a lista de entrada
-remove_n_elements(0, ResultList, ResultList, _).
-
-% Caso recursivo: remove o primeiro elemento da lista e continua com N-1
-remove_n_elements(N, [Head | Tail], ResultList, Acc) :-
-    N > 0,
-    N1 is N - 1,
-    remove_n_elements(N1, Tail, ResultList, [Head | Acc]).
 
 % Condição de vitória
 winning_condition(PlayerColor, NewTower) :-
@@ -326,5 +292,5 @@ gameLoop(Board, Player1, Player2) :-
 % Função para iniciar o jogo.
 startGame(Player1, Player2) :-
       initialBoard(InitialBoard),  % Obtém um tabuleiro inicial.
-      addWorkers(InitialBoard, WorkersBoard, Player1, Player2),  % Adiciona trabalhadores aos tabuleiros.
-      gameLoop(WorkersBoard, Player1, Player2).  % Inicia o loop do jogo.
+      addPieces(InitialBoard, PiecesBoard, Player1, Player2),  % Adiciona trabalhadores aos tabuleiros.
+      gameLoop(PiecesBoard, Player1, Player2).  % Inicia o loop do jogo.
