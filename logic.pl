@@ -19,14 +19,13 @@ updateBoard(NewBoard) :-
 getCurrentBoard(CurrentBoard) :-
     board(CurrentBoard).
 
-
 % Verifica o estado atual do jogo após cada jogada.
 checkGameState(Player, Board) :-
-    (checkFullBoard(Board) -> drawMessage  % Verifica se o tabuleiro está cheio.).
+    (checkFullBoard(Board) -> drawMessage  % Verifica se o tabuleiro está cheio.
+    ).
 
 drawMessage :-
     write('Woops, no more space left! It is a draw!').  % Mensagem de empate.
-
 
 % Verifica a validade de uma jogada.
 checkMove(Board, Player, NewBoard, Expected, ColumnIndex, RowIndex) :-
@@ -64,6 +63,7 @@ checkMove(Board, Player, NewBoard, Expected, ColumnIndex, RowIndex) :-
             askCoords(Board, Player, NewBoard, Expected)
         )
     ).
+
 
 
 
@@ -140,7 +140,7 @@ moveTower(Board, NewBoard, PlayerColor) :-
 
             length(Piece, Size),
             % Valide o movimento
-            (check_move(RowIndex, ColumnIndex, RowInd, ColumnInd, Size) ->
+            (valid_moves(RowIndex, ColumnIndex, RowInd, ColumnInd, Size) ->
                 append(Piece, SelectedTower, NewTower),
 
                 % Substitua a torre original na posição inicial pelo NewTower
@@ -220,7 +220,7 @@ removeAndMovePieces(Board, NewBoard, PlayerColor) :-
                 add_n_elements(NumPieces, PlayerColor, SelectedTower, ResultListt), % Peça de destino
 
                 (
-                    check_move(RowIndex, ColumnIndex, NewRowIndex, NewColumnIndex, NumPieces) ->
+                    valid_moves(RowIndex, ColumnIndex, NewRowIndex, NewColumnIndex, NumPieces) ->
                         replaceInMatrix(Board, RowIndex, ColumnIndex, ResultListt, TempBoard),
                         replaceInMatrix(TempBoard, NewRowIndex, NewColumnIndex, ResultList, NewBoard),
                         (
@@ -258,8 +258,17 @@ removeAndMovePieces(Board, NewBoard, PlayerColor) :-
 winning_condition(PlayerColor, NewTower) :-
     length(NewTower, Size),
     (Size =:= 6 ->
-        write('Congratulations! Player '), write(PlayerColor), write(' wins the game!'), nl, nl
+        nl,
+        write('+----------------------------------------------------------------------------+\n'),
+        write('|                                                                            |\n'),
+        write('|   Congratulations! Player '), write(PlayerColor), write(' wins the game!   |'), nl, nl,
+        write('|                                                                            |\n'),
+        write('+----------------------------------------------------------------------------+\n'),
+
+        delay_seconds(10),
+        halt  % Encerra o programa
     ; true).
+
 
 % Função principal para o turno do jogador
 playerTurn(Board, NewBoard, PlayerColor, PlayerName) :-
@@ -294,3 +303,10 @@ startGame(Player1, Player2) :-
       initialBoard(InitialBoard),  % Obtém um tabuleiro inicial.
       addPieces(InitialBoard, PiecesBoard, Player1, Player2),  % Adiciona trabalhadores aos tabuleiros.
       gameLoop(PiecesBoard, Player1, Player2).  % Inicia o loop do jogo.
+
+game_over(Board, PlayerColor) :-
+    checkGameStatus(Board, PlayerColor),
+    winning_condition(PlayerColor, NewTower)
+    nl,
+    write('Game Over.'),
+    halt.

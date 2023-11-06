@@ -65,9 +65,6 @@ piece([white, white, white]) :- write('   CO    ').
 piece([white, white, white, white]) :- write('   BO    ').
 piece([white, white, white, white, white]) :- write('   RO    ').
 
-piece([black,1]) :- write('    X    ').
-piece([white,1]) :- write('    O    ').
-
 % Print the winner
-piece([black, 6]) :- write('X Wins').
-piece([white, 6]) :- write('O Wins').
+piece([black, black, black, black, black, black]) :- write('X Wins'). % Torre preta
+piece([white, white, white, white, white, white]) :- write('O Wins'). % Torre branca

@@ -5,7 +5,7 @@ piece(knight, 3).
 piece(bishop, 4).
 piece(_, 5).
 
-% Define movement rules
+% Define regras de movimento de xadrez
 chess_moves(pawn, Row, NewRow, Column, NewColumn) :-
     (Row =:= NewRow, abs(NewColumn - Column) =:= 1) ; (Column =:= NewColumn, abs(NewRow - Row) =:= 1).
 
@@ -19,7 +19,7 @@ chess_moves(bishop, Row, NewRow, Column, NewColumn) :-
     abs(NewRow - Row) =:= abs(NewColumn - Column).
 
 % Validate all moves
-check_move(Row, Column, NewRow, NewColumn, PieceType) :-
+valid_moves(Row, Column, NewRow, NewColumn, PieceType) :-
     piece(Piece, PieceType),
     (chess_moves(Piece, Row, NewRow, Column, NewColumn) ->
         true
