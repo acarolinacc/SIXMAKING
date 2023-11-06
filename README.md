@@ -10,8 +10,8 @@ Programação Funcional e em Lógica
 
 **Contribution**
 
-- Ana Carolina da Costa Coutinho 	(up202108685) Contribution: 100%
-- Tomás Pacheco Pires 	(up202008319) Contribution: 0%
+- Ana Carolina da Costa Coutinho 	(up202108685) Contribution: 90%
+- Tomás Pacheco Pires 	(up202008319) Contribution: 10%
 
 ## Installation and Execution
 
